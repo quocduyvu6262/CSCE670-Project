@@ -18,7 +18,7 @@ meta = []
 with jsonlines.open(CORPUS_FILE) as reader:
     for obj in reader:
         texts.append(obj['text'])
-        meta.append({"title": obj['title'], "url": obj['url']})
+        meta.append({"title": obj['title'], "text": obj['text'], "url": obj['url']})
 
 # Embed corpus
 model = SentenceTransformer('all-MiniLM-L6-v2')

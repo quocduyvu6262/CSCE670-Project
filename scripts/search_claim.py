@@ -5,9 +5,9 @@ from sentence_transformers import SentenceTransformer
 from transformers import pipeline
 
 # Paths
-EMBED_FILE = "../embeddings/faiss_index/wiki_embeddings.npy"
-INDEX_FILE = "../embeddings/faiss_index/index.faiss"
-META_FILE = "../embeddings/faiss_index/meta.json"
+EMBED_FILE = "embeddings/faiss_index/wiki_embeddings.npy"
+INDEX_FILE = "embeddings/faiss_index/index.faiss"
+META_FILE = "embeddings/faiss_index/meta.json"
 
 # Load embeddings & index
 embeddings = np.load(EMBED_FILE).astype('float32')
