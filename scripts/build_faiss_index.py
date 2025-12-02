@@ -5,10 +5,10 @@ import faiss
 import os
 import json
 
-CORPUS_FILE = "../data/processed/wiki_corpus_small.jsonl"
-EMBED_FILE = "../embeddings/faiss_index/wiki_embeddings.npy"
-INDEX_FILE = "../embeddings/faiss_index/index.faiss"
-META_FILE = "../embeddings/faiss_index/meta.json"
+CORPUS_FILE = "data/processed/wiki_corpus_small.jsonl"
+EMBED_FILE = "embeddings/faiss_index/wiki_embeddings.npy"
+INDEX_FILE = "embeddings/faiss_index/index.faiss"
+META_FILE = "embeddings/faiss_index/meta.json"
 
 os.makedirs(os.path.dirname(EMBED_FILE), exist_ok=True)
 
