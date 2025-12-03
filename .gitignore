@@ -32,3 +32,5 @@ data/processed/*
 
 !data/raw/.gitkeep
 !data/processed/.gitkeep
+
+node_modules/
