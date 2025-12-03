@@ -31,16 +31,3 @@ function init() {
 }
 
 init();
-
-// Listen for trigger requests from background
-chrome.runtime.onMessage.addListener((message, _sender, _sendResponse) => {
-    if (message.type === 'TRIGGER_CHECK_REQUEST') {
-        const selection = window.getSelection()?.toString();
-        if (selection) {
-            console.log('Selected text:', selection);
-            chrome.runtime.sendMessage({ type: 'TRIGGER_CHECK', text: selection });
-        } else {
-            console.log('No text selected');
-        }
-    }
-});

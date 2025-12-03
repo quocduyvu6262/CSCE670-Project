@@ -1,45 +1,103 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState, useEffect, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { X, ShieldCheck, Sparkles } from 'lucide-react';
+import { X, ShieldCheck, Sparkles, AlertCircle } from 'lucide-react';
 import { InvestigationView } from './components/InvestigationView';
 import { VerdictView } from './components/VerdictView';
 import { SourceUpdate, Message } from '../types/messages';
 
 export const GhostPopover: React.FC = () => {
     const [isVisible, setIsVisible] = useState(false);
-    const [stage, setStage] = useState<'idle' | 'investigating' | 'synthesis'>('idle');
+    const [stage, setStage] = useState<'idle' | 'investigating' | 'synthesis' | 'error'>('idle');
     const [sources, setSources] = useState<SourceUpdate[]>([]);
     const [verdictStream, setVerdictStream] = useState('');
     const [isStreamComplete, setIsStreamComplete] = useState(false);
+    const [errorMessage, setErrorMessage] = useState('');
+    const portRef = useRef<chrome.runtime.Port | null>(null);
+
+    // Cleanup port when popover is closed
+    useEffect(() => {
+        if (!isVisible && portRef.current) {
+            console.log('Popover closed, disconnecting port');
+            portRef.current.disconnect();
+            portRef.current = null;
+        }
+    }, [isVisible]);
 
     useEffect(() => {
         const handleMessage = (message: Message) => {
-            if (message.type === 'TRIGGER_CHECK') {
-                setIsVisible(true);
-                setStage('investigating');
-                setSources([]);
-                setVerdictStream('');
-                setIsStreamComplete(false);
-            } else if (message.type === 'SOURCE_UPDATE') {
-                setSources((prev) => {
-                    const exists = prev.find((s) => s.url === message.payload.url);
-                    if (exists) {
-                        return prev.map((s) => (s.url === message.payload.url ? message.payload : s));
+            if (message.type === 'TRIGGER_CHECK_REQUEST') {
+                const selection = window.getSelection()?.toString();
+                if (selection) {
+                    // Cleanup existing connection if any
+                    if (portRef.current) {
+                        portRef.current.disconnect();
                     }
-                    return [...prev, message.payload];
-                });
-            } else if (message.type === 'STREAM_START') {
-                setStage('synthesis');
-            } else if (message.type === 'STREAM_CHUNK') {
-                setVerdictStream((prev) => prev + message.chunk);
-            } else if (message.type === 'STREAM_END') {
-                setIsStreamComplete(true);
+
+                    setIsVisible(true);
+                    setStage('investigating');
+                    setSources([]);
+                    setVerdictStream('');
+                    setIsStreamComplete(false);
+                    setErrorMessage('');
+
+                    // Establish long-lived connection
+                    const port = chrome.runtime.connect({ name: 'ghost-stream' });
+                    portRef.current = port;
+
+                    // Send the text to start processing
+                    port.postMessage({ type: 'START_CHECK', text: selection });
+
+                    // Listen for updates
+                    port.onMessage.addListener((msg: Message) => {
+                        if (msg.type === 'SOURCE_UPDATE') {
+                            setSources((prev) => {
+                                const exists = prev.find((s) => s.url === msg.payload.url);
+                                if (exists) {
+                                    return prev.map((s) => (s.url === msg.payload.url ? msg.payload : s));
+                                }
+                                return [...prev, msg.payload];
+                            });
+                        } else if (msg.type === 'STREAM_START') {
+                            setStage('synthesis');
+                        } else if (msg.type === 'STREAM_CHUNK') {
+                            setVerdictStream((prev) => prev + msg.chunk);
+                        } else if (msg.type === 'STREAM_END') {
+                            setIsStreamComplete(true);
+                        } else if (msg.type === 'ERROR') {
+                            setStage('error');
+                            setErrorMessage(msg.error);
+                        }
+                    });
+
+                    // Handle unexpected disconnection
+                    port.onDisconnect.addListener(() => {
+                        console.log('Port disconnected unexpectedly');
+                        if (chrome.runtime.lastError) {
+                            console.error('Connection error:', chrome.runtime.lastError);
+                        }
+                        // Only show error if we haven't finished successfully and aren't already in error state
+                        if (!isStreamComplete && stage !== 'error') {
+                            setStage('error');
+                            setErrorMessage('Connection to background service lost.');
+                        }
+                    });
+                }
             }
         };
 
         chrome.runtime.onMessage.addListener(handleMessage);
-        return () => chrome.runtime.onMessage.removeListener(handleMessage);
+        return () => {
+            chrome.runtime.onMessage.removeListener(handleMessage);
+            // Cleanup on unmount (though this component rarely unmounts)
+            if (portRef.current) {
+                portRef.current.disconnect();
+            }
+        };
     }, []);
+
+
+
 
     if (!isVisible) return null;
 
@@ -81,6 +139,14 @@ export const GhostPopover: React.FC = () => {
                                     <span className="tracking-wide">Ghost Fact-Checker</span>
                                 </>
                             )}
+                            {stage === 'error' && (
+                                <>
+                                    <div className="p-1 rounded-lg bg-red-500/10 text-red-400">
+                                        <AlertCircle className="w-4 h-4" />
+                                    </div>
+                                    <span className="tracking-wide text-red-100">Error Occurred</span>
+                                </>
+                            )}
                         </h1>
                         <button
                             onClick={() => setIsVisible(false)}
@@ -105,6 +171,29 @@ export const GhostPopover: React.FC = () => {
                                     isComplete={isStreamComplete}
                                 />
                             )}
+                            {stage === 'error' && (
+                                <motion.div
+                                    key="error"
+                                    initial={{ opacity: 0, scale: 0.95 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    exit={{ opacity: 0, scale: 0.95 }}
+                                    className="p-8 flex flex-col items-center justify-center text-center space-y-4"
+                                >
+                                    <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center text-red-500 mb-2">
+                                        <AlertCircle size={32} />
+                                    </div>
+                                    <h3 className="text-lg font-semibold text-slate-200">Something went wrong</h3>
+                                    <p className="text-sm text-slate-400 max-w-[280px]">
+                                        {errorMessage || "An unexpected error occurred while processing your request."}
+                                    </p>
+                                    <button
+                                        onClick={() => setIsVisible(false)}
+                                        className="mt-4 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-medium rounded-lg transition-colors"
+                                    >
+                                        Close
+                                    </button>
+                                </motion.div>
+                            )}
                         </AnimatePresence>
                     </div>
                 </motion.div>
@@ -112,3 +201,4 @@ export const GhostPopover: React.FC = () => {
         </div>
     );
 };
+

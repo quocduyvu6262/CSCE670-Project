@@ -64,7 +64,7 @@ graph TD
 Communication relies on a strictly typed messaging system defined in `src/types/messages.ts`.
 
 ### 3.1 Live Investigation Flow (RAG)
-1.  **Trigger**: User selects text -> `ANALYZE_REQUEST`.
+1.  **Trigger**: User selects text -> `START_CHECK`.
 2.  **Search**: Background calls Google Search API -> gets URLs.
 3.  **Source Verification Loop** (Parallel):
     *   **Fetch**: Background fetches HTML -> sends to Offscreen.
@@ -87,37 +87,38 @@ Communication relies on a strictly typed messaging system defined in `src/types/
 
 ## 5. Data Models
 
-### `ExtensionMessage` (Discriminated Union)
+### `Message` (Discriminated Union)
 
 ```typescript
-type ExtensionMessage =
-  | { type: 'ANALYZE_REQUEST'; payload: { text: string; context?: string } }
-  | { type: 'SOURCE_UPDATE'; payload: SourceUpdate }
-  | { type: 'STREAM_START'; payload: { messageId: string } }
-  | { type: 'STREAM_CHUNK'; payload: { chunk: string; messageId: string } }
-  | { type: 'STREAM_COMPLETE'; payload: { messageId: string } }
-  | { type: 'ERROR'; payload: { code: string; message: string } }
-  | { type: 'PING'; payload: null };
+type Message =
+    | { type: 'TRIGGER_CHECK_REQUEST' }
+    | { type: 'START_CHECK'; text: string }
+    | { type: 'SOURCE_UPDATE'; payload: SourceUpdate }
+    | { type: 'STREAM_START' }
+    | { type: 'STREAM_CHUNK'; chunk: string }
+    | { type: 'STREAM_END' }
+    | { type: 'ERROR'; error: string };
 ```
 
 ### `SourceUpdate`
 
 ```typescript
-interface SourceUpdate {
-  url: string;
-  domain: string;
-  status: 'analyzing' | 'supports' | 'debunks' | 'neutral';
-  verdict?: string; // Short reason (e.g., "Contains matching statistics")
-}
+type SourceUpdate = {
+    url: string;
+    domain: string;
+    status: 'analyzing' | 'supports' | 'debunks' | 'neutral';
+    verdict?: string; // Short reason (e.g., "Contains matching statistics")
+    quote?: string; // Relevant quote from the source
+};
 ```
 
 ### `FactCheckResult`
 
 ```typescript
 interface FactCheckResult {
-  verdict: 'verified' | 'debunked' | 'disputed' | 'info';
-  confidence: number; // 0.0 - 1.0
-  summary: string;
-  sources: Array<SourceUpdate>;
+    verdict: 'verified' | 'debunked' | 'disputed' | 'info';
+    confidence: number; // 0.0 - 1.0
+    summary: string;
+    sources: Array<SourceUpdate>;
 }
 ```
