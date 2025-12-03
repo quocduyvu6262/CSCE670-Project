@@ -24,7 +24,6 @@ dist/
 
 # Windows files
 Thumbs.db
-embeddings/
 
 
 data/raw/*

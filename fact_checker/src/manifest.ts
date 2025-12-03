@@ -15,6 +15,7 @@ export default defineManifest({
     ],
     host_permissions: [
         'https://www.googleapis.com/*',
+        'http://localhost:*/*',
         '*://*/*'
     ],
     background: {

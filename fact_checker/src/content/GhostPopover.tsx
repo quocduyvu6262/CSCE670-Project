@@ -1,16 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { X, ShieldCheck } from 'lucide-react';
+import { X, ShieldCheck, AlertCircle } from 'lucide-react';
 import { InvestigationView } from './components/InvestigationView';
 import { VerdictView } from './components/VerdictView';
 import { SourceUpdate, Message } from '../types/messages';
 
 export const GhostPopover: React.FC = () => {
     const [isVisible, setIsVisible] = useState(false);
-    const [stage, setStage] = useState<'idle' | 'investigating' | 'synthesis'>('idle');
+    const [stage, setStage] = useState<'idle' | 'investigating' | 'synthesis' | 'error'>('idle');
     const [sources, setSources] = useState<SourceUpdate[]>([]);
     const [verdictStream, setVerdictStream] = useState('');
     const [isStreamComplete, setIsStreamComplete] = useState(false);
+    const [errorMessage, setErrorMessage] = useState<string>('');
 
     useEffect(() => {
         const handleMessage = (message: Message) => {
@@ -20,6 +21,7 @@ export const GhostPopover: React.FC = () => {
                 setSources([]);
                 setVerdictStream('');
                 setIsStreamComplete(false);
+                setErrorMessage('');
             } else if (message.type === 'SOURCE_UPDATE') {
                 setSources((prev) => {
                     const exists = prev.find((s) => s.url === message.payload.url);
@@ -34,6 +36,9 @@ export const GhostPopover: React.FC = () => {
                 setVerdictStream((prev) => prev + message.chunk);
             } else if (message.type === 'STREAM_END') {
                 setIsStreamComplete(true);
+            } else if (message.type === 'ERROR') {
+                setStage('error');
+                setErrorMessage(message.error);
             }
         };
 
@@ -70,6 +75,12 @@ export const GhostPopover: React.FC = () => {
                                     <span>Verdict Ready</span>
                                 </>
                             )}
+                            {stage === 'error' && (
+                                <>
+                                    <AlertCircle className="w-5 h-5 text-rose-600" />
+                                    <span>Error</span>
+                                </>
+                            )}
                         </h1>
                         <button
                             onClick={() => setIsVisible(false)}
@@ -93,6 +104,19 @@ export const GhostPopover: React.FC = () => {
                                     sources={sources}
                                     isComplete={isStreamComplete}
                                 />
+                            )}
+                            {stage === 'error' && (
+                                <motion.div
+                                    key="error"
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    exit={{ opacity: 0 }}
+                                    className="p-6"
+                                >
+                                    <div className="bg-rose-50 border border-rose-200 rounded-lg p-4">
+                                        <p className="text-sm text-rose-800">{errorMessage}</p>
+                                    </div>
+                                </motion.div>
                             )}
                         </AnimatePresence>
                     </div>
