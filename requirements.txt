@@ -6,3 +6,5 @@ streamlit
 jsonlines
 datasets
 tqdm
+flask
+flask-cors
