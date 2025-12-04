@@ -13,7 +13,7 @@ dataset = load_dataset("wikimedia/wikipedia", "20231101.en", split="train", stre
 
 # English Wikipedia is roughly 6.5 million articles. 
 # 60,000 articles is approx 1%.
-MAX_ARTICLES = 60000 
+MAX_ARTICLES = 100000
 count = 0
 
 with jsonlines.open(OUTPUT_FILE, mode='w') as writer:
