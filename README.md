@@ -18,7 +18,11 @@ npm install
 npm run build
 ```
 
-## 3. Run the Backend Server
+## 3. Download Embedding
+Go to [this Google Drive folder](https://drive.google.com/drive/folders/1-E4J03a8Br7slcV9QwmCryL1TV3AeXGA?usp=sharing) and download the three files. Then, at the root folder, place them in `embeddings/faiss_index/`.
+
+
+## 4. Run the Backend Server
 Return to the root directory and start the API server:
 
 ```bash
@@ -26,7 +30,7 @@ cd ..
 python app/api.py
 ```
 
-## 4. Install in Google Chrome
+## 5. Install in Google Chrome
 1. Open Google Chrome and navigate to `chrome://extensions/`.
 2. Toggle **Developer mode** on (usually located in the top right corner).
 3. Click the **Load unpacked** button.
