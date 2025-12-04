@@ -6,8 +6,16 @@ export type SourceUpdate = {
     quote?: string; // Relevant quote from the source
 };
 
+export interface FactCheckResult {
+    verdict: 'verified' | 'debunked' | 'disputed' | 'info';
+    confidence: number; // 0.0 - 1.0
+    summary: string;
+    sources: Array<SourceUpdate>;
+}
+
 export type Message =
-    | { type: 'TRIGGER_CHECK'; text: string }
+    | { type: 'TRIGGER_CHECK_REQUEST' }
+    | { type: 'START_CHECK'; text: string }
     | { type: 'SOURCE_UPDATE'; payload: SourceUpdate }
     | { type: 'STREAM_START' }
     | { type: 'STREAM_CHUNK'; chunk: string }

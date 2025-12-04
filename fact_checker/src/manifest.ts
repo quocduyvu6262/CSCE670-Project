@@ -37,6 +37,11 @@ export default defineManifest({
         }
     },
     action: {
-        "default_title": "Ghost Fact-Checker"
+        "default_title": "Ghost Fact-Checker",
+        "default_popup": "src/popup/index.html"
+    },
+    options_ui: {
+        page: "src/options/index.html",
+        open_in_tab: true
     }
 })

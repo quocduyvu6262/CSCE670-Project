@@ -1,1 +1,25 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap');
 @import "tailwindcss";
+
+@theme {
+    --font-sans: 'Inter', sans-serif;
+    --font-serif: 'Playfair Display', serif;
+}
+
+/* Scoped styles for the shadow DOM root if needed, but Tailwind classes usually suffice */
+:host {
+    font-family: 'Inter', sans-serif;
+}
+
+/* Custom Scrollbar for WebKit within Shadow DOM */
+::-webkit-scrollbar {
+    width: 6px;
+}
+
+::-webkit-scrollbar-track {
+    @apply bg-transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    @apply bg-slate-700/50 rounded-full hover:bg-slate-600/50 transition-colors;
+}

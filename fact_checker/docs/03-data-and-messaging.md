@@ -4,19 +4,19 @@
 
 Communication between the Content Script, Background Worker, and Offscreen Document relies on a strictly typed messaging system.
 
-### 1.1 `ExtensionMessage` (Discriminated Union)
+### 1.1 `Message` (Discriminated Union)
 
 All messages sent via `chrome.runtime.sendMessage` or `port.postMessage` must adhere to this type.
 
 ```typescript
-export type ExtensionMessage =
-  | { type: 'ANALYZE_REQUEST'; payload: { text: string; context?: string } }
-  | { type: 'SOURCE_UPDATE'; payload: SourceUpdate }
-  | { type: 'STREAM_START'; payload: { messageId: string } }
-  | { type: 'STREAM_CHUNK'; payload: { chunk: string; messageId: string } }
-  | { type: 'STREAM_COMPLETE'; payload: { messageId: string } }
-  | { type: 'ERROR'; payload: { code: string; message: string } }
-  | { type: 'PING'; payload: null };
+export type Message =
+    | { type: 'TRIGGER_CHECK_REQUEST' }
+    | { type: 'START_CHECK'; text: string }
+    | { type: 'SOURCE_UPDATE'; payload: SourceUpdate }
+    | { type: 'STREAM_START' }
+    | { type: 'STREAM_CHUNK'; chunk: string }
+    | { type: 'STREAM_END' }
+    | { type: 'ERROR'; error: string };
 ```
 
 ### 1.2 `SourceUpdate` Schema
@@ -24,13 +24,13 @@ export type ExtensionMessage =
 Used to update the UI with the status of a specific source during the "Live Investigation" phase.
 
 ```typescript
-export interface SourceUpdate {
-  url: string;
-  domain: string;
-  status: 'pending' | 'analyzing' | 'supports' | 'debunks' | 'neutral' | 'error';
-  verdict?: string; // Short, 1-sentence reason (e.g., "Contains matching statistics")
-  confidence?: number; // 0.0 - 1.0
-}
+export type SourceUpdate = {
+    url: string;
+    domain: string;
+    status: 'analyzing' | 'supports' | 'debunks' | 'neutral';
+    verdict?: string; // Short reason (e.g., "Contains matching statistics")
+    quote?: string; // Relevant quote from the source
+};
 ```
 
 ### 1.3 `FactCheckResult` Schema
@@ -39,10 +39,10 @@ The final output of the synthesis phase.
 
 ```typescript
 export interface FactCheckResult {
-  verdict: 'verified' | 'debunked' | 'disputed' | 'info';
-  confidence: number; // 0.0 - 1.0
-  summary: string;
-  sources: Array<SourceUpdate>;
+    verdict: 'verified' | 'debunked' | 'disputed' | 'info';
+    confidence: number; // 0.0 - 1.0
+    summary: string;
+    sources: Array<SourceUpdate>;
 }
 ```
 
